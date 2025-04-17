@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wolf Eyes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    // F1: Original function to show sections
+    function showSection(id) {
+      const sections = document.querySelectorAll(".section");
+      sections.forEach(section => section.style.display = "none");
+      document.getElementById(id).style.display = "block";
+    }
+
+    // F2: Loading animation when navigating between sections
+    function showLoadingAnimation(sectionId) {
+      // Create loading overlay
+      const loadingOverlay = document.createElement('div');
+      loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      loadingOverlay.id = 'loadingOverlay';
+      loadingOverlay.innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>';
+      document.body.appendChild(loadingOverlay);
+      
+      // Remove loading overlay after a short delay and show section
+      setTimeout(() => {
+        document.body.removeChild(loadingOverlay);
+        showSection(sectionId);
+      }, 500);
+    }
+
+    // F3: Add products to shopping cart
+    function addToCart(productName, price) {
+      // Get or initialize cart from localStorage
+      let cart = JSON.parse(localStorage.getItem('wolfEyesCart')) || [];
+      
+      // Add item to cart
+      cart.push({
+        productName: productName,
+        price: price,
+        quantity: 1
+      });
+      
+      // Save to localStorage
+      localStorage.setItem('wolfEyesCart', JSON.stringify(cart));
+      
+      // Update cart counter
+      updateCartCounter();
+      
+      // Show confirmation message
+      const confirmMessage = document.createElement('div');
+      confirmMessage.className = 'fixed bottom-4 right-4 bg-green-500 text-white p-3 rounded-lg shadow-lg';
+      confirmMessage.innerHTML = `${productName} added to cart!`;
+      document.body.appendChild(confirmMessage);
+      
+      // Remove confirmation after 2 seconds
+      setTimeout(() => {
+        document.body.removeChild(confirmMessage);
+      }, 2000);
+    }
+    
+    // F4: Helper function to update cart counter
+    
+    function updateCartCounter() {
+      const cart = JSON.parse(localStorage.getItem('wolfEyesCart')) || [];
+      const cartCounter = document.getElementById('cartCounter');
+      if (cartCounter) {
+        cartCounter.textContent = cart.length;
+        if (cart.length > 0) {
+          cartCounter.classList.remove('hidden');
+        } else {
+          cartCounter.classList.add('hidden');
+        }
+      }
+    }
+
+    // F5: Dark mode toggle
+    function toggleDarkMode() {
+      const body = document.body;
+      body.classList.toggle('dark-mode');
+      
+      // Save preference to localStorage
+      const isDarkMode = body.classList.contains('dark-mode');
+      localStorage.setItem('wolfEyesDarkMode', isDarkMode);
+      
+      // Apply dark mode styles
+      if (isDarkMode) {
+        body.classList.add('bg-gray-900', 'text-black');
+        document.querySelectorAll('.bg-white').forEach(el => {
+          el.classList.remove('bg-white');
+          el.classList.add('bg-gray-800');
+        });
+        document.querySelectorAll('.text-gray-700, .text-gray-600').forEach(el => {
+          el.classList.add('text-gray-300');
+        });
+        document.querySelectorAll('.bg-gray-100').forEach(el => {
+          el.classList.remove('bg-gray-100');
+          el.classList.add('bg-gray-900');
+        });
+      } else {
+        body.classList.remove('bg-gray-900', 'text-white');
+        document.querySelectorAll('.bg-gray-800').forEach(el => {
+          el.classList.remove('bg-gray-800');
+          el.classList.add('bg-white');
+        });
+        document.querySelectorAll('.text-gray-300').forEach(el => {
+          el.classList.remove('text-gray-300');
+        });
+        document.querySelectorAll('.bg-gray-900:not(footer)').forEach(el => {
+          el.classList.remove('bg-gray-900');
+          el.classList.add('bg-gray-100');
+        });
+      }
+    }
+
+    // F6:  Filter products by price range
+    function filterByPrice() {
+      const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+      const maxPrice = parseFloat(document.getElementById('maxPrice').value) || 1000;
+      
+      const productCards = document.querySelectorAll('#categories .product-card');
+      
+      productCards.forEach(card => {
+        const priceText = card.querySelector('.product-price').textContent;
+        const price = parseFloat(priceText.replace('$', ''));
+        
+        if (price >= minPrice && price <= maxPrice) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // F7 : Original payment confirmation function
+    function confirmPayment() {
+      const fullName = document.getElementById('fullName').value;
+      const address = document.getElementById('address').value;
+      const postalCode = document.getElementById('postalCode').value;
+      const contactNumber = document.getElementById('contactNumber').value;
+      const totalPayment = document.getElementById('totalPayment').value;
+
+      if (fullName && address && postalCode && contactNumber && totalPayment) {
+        document.getElementById('paymentForm').style.display = 'none';
+        document.getElementById('confirmationMessage').classList.remove('hidden');
+        // Clear cart after successful payment
+        localStorage.removeItem('wolfEyesCart');
+        updateCartCounter();
+      } else {
+        alert("Please fill in all the details before submitting.");
+      }
+    }
+
+    // F8:  Product Search
+    function searchProducts() {
+      const searchInput = document.getElementById('searchInput').value.toLowerCase();
+      const productCards = document.querySelectorAll('#categories .product-card');
+      
+      let resultsFound = false;
+      
+      productCards.forEach(card => {
+        const productName = card.querySelector('h3').textContent.toLowerCase();
+        const productDescription = card.querySelector('p').textContent.toLowerCase();
+        
+        if (productName.includes(searchInput) || productDescription.includes(searchInput)) {
+          card.style.display = 'block';
+          resultsFound = true;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      // Show/hide no results message
+      const noResultsMessage = document.getElementById('noResultsMessage');
+      if (noResultsMessage) {
+        noResultsMessage.style.display = resultsFound ? 'none' : 'block';
+      }
+    }
+
+    // F9 : Back to top function
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    // Show or hide back to top button based on scroll position
+    function toggleBackToTopButton() {
+      const backToTopButton = document.getElementById('backToTopButton');
+      if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+        backToTopButton.classList.remove('hidden');
+      } else {
+        backToTopButton.classList.add('hidden');
+      }
+    }
+
+    // F10 : Save for later function
+    function saveForLater(productName, price) {
+      // Get or initialize saved items from localStorage
+      let savedItems = JSON.parse(localStorage.getItem('wolfEyesSavedItems')) || [];
+      
+      // Check if item is already saved
+      const existingItem = savedItems.find(item => item.productName === productName);
+      
+      if (!existingItem) {
+        // Add item to saved items
+        savedItems.push({
+          productName: productName,
+          price: price
+        });
+        
+        // Save to localStorage
+        localStorage.setItem('wolfEyesSavedItems', JSON.stringify(savedItems));
+        
+        // Show confirmation message
+        const confirmMessage = document.createElement('div');
+        confirmMessage.className = 'fixed bottom-4 right-4 bg-blue-500 text-white p-3 rounded-lg shadow-lg';
+        confirmMessage.innerHTML = `${productName} saved for later!`;
+        document.body.appendChild(confirmMessage);
+        
+        // Remove confirmation after 2 seconds
+        setTimeout(() => {
+          document.body.removeChild(confirmMessage);
+        }, 2000);
+      } else {
+        // Show already saved message
+        const alreadySavedMessage = document.createElement('div');
+        alreadySavedMessage.className = 'fixed bottom-4 right-4 bg-yellow-500 text-white p-3 rounded-lg shadow-lg';
+        alreadySavedMessage.innerHTML = `${productName} is already saved!`;
+        document.body.appendChild(alreadySavedMessage);
+        
+        // Remove message after 2 seconds
+        setTimeout(() => {
+          document.body.removeChild(alreadySavedMessage);
+        }, 2000);
+      }
+      
+      // Update saved items counter
+      updateSavedItemsCounter();
+    }
+
+    // F11: Helper function to update saved items counter
+    function updateSavedItemsCounter() {
+      const savedItems = JSON.parse(localStorage.getItem('wolfEyesSavedItems')) || [];
+      const savedItemsCounter = document.getElementById('savedItemsCounter');
+      
+      if (savedItemsCounter) {
+        savedItemsCounter.textContent = savedItems.length;
+        if (savedItems.length > 0) {
+          savedItemsCounter.classList.remove('hidden');
+        } else {
+          savedItemsCounter.classList.add('hidden');
+        }
+      }
+    }
+
+    // Show saved items in a modal
+    function showSavedItems() {
+      const savedItems = JSON.parse(localStorage.getItem('wolfEyesSavedItems')) || [];
+      
+      // Create modal
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      modal.id = 'savedItemsModal';
+      
+      let modalContent = `
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full max-h-96 overflow-auto">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Saved Items</h3>
+            <button onclick="document.getElementById('savedItemsModal').remove()" class="text-gray-500 hover:text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+      `;
+      
+      if (savedItems.length === 0) {
+        modalContent += `<p class="text-gray-600">You haven't saved any items yet.</p>`;
+      } else {
+        modalContent += `<ul class="divide-y divide-gray-200">`;
+        savedItems.forEach(item => {
+          modalContent += `
+            <li class="py-3 flex justify-between items-center">
+              <div>
+                <p class="font-medium">${item.productName}</p>
+                <p class="text-gray-600">$${item.price}</p>
+              </div>
+              <div class="flex space-x-2">
+                <button onclick="addToCart('${item.productName}', ${item.price})" class="bg-black text-white px-3 py-1 rounded text-sm hover:bg-orange-500">
+                  Add to Cart
+                </button>
+                <button onclick="removeFromSaved('${item.productName}')" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">
+                  Remove
+                </button>
+              </div>
+            </li>
+          `;
+        });
+        modalContent += `</ul>`;
+      }
+      
+      modalContent += `</div>`;
+      modal.innerHTML = modalContent;
+      
+      document.body.appendChild(modal);
+    }
+
+    // F12:  Remove item from saved items
+    function removeFromSaved(productName) {
+      let savedItems = JSON.parse(localStorage.getItem('wolfEyesSavedItems')) || [];
+      
+      // Filter out the item to remove
+      savedItems = savedItems.filter(item => item.productName !== productName);
+      
+      // Save updated list to localStorage
+      localStorage.setItem('wolfEyesSavedItems', JSON.stringify(savedItems));
+      
+      // Update saved items counter
+      updateSavedItemsCounter();
+      
+      // Update the modal if it's open
+      const modal = document.getElementById('savedItemsModal');
+      if (modal) {
+        document.body.removeChild(modal);
+        showSavedItems();
+      }
+    }
+
+    // Initialization function
+    window.onload = function () {
+      showSection('home');
+      
+      // Check if dark mode was previously enabled
+      const isDarkMode = localStorage.getItem('wolfEyesDarkMode') === 'true';
+      if (isDarkMode) {
+        toggleDarkMode();
+      }
+      
+      // Initialize cart counter
+      updateCartCounter();
+      
+      // Initialize saved items counter
+      updateSavedItemsCounter();
+      
+      // Add scroll event listener for back to top button
+      window.addEventListener('scroll', toggleBackToTopButton);
+    };
+  </script>
+</head>
+
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Header with dark mode toggle and cart icon -->
+  <header class="bg-black text-white py-2 flex justify-end items-center px-4">
+    <button onclick="toggleDarkMode()" class="mr-4 text-white hover:text-orange-300">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+    </button>
+    <!-- New saved items button -->
+    <div class="relative mr-4">
+      <button onclick="showSavedItems()" class="text-white hover:text-orange-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      </button>
+      <span id="savedItemsCounter" class="absolute -top-2 -right-2 bg-blue-500 text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+    </div>
+    <div class="relative mr-2">
+      <button onclick="showLoadingAnimation('payment')" class="text-white hover:text-orange-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      </button>
+      <span id="cartCounter" class="absolute -top-2 -right-2 bg-orange-500 text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="flex bg-black py-4 justify-center flex-wrap">
+    <button onclick="showLoadingAnimation('home')" class="text-white px-5 hover:text-orange-300">Home</button>
+    <button onclick="showLoadingAnimation('categories')" class="text-white px-5 hover:text-orange-300">Categories</button>
+    <button onclick="showLoadingAnimation('about')" class="text-white px-5 hover:text-orange-300">About</button>
+    <button onclick="showLoadingAnimation('contact')" class="text-white px-5 hover:text-orange-300">Contact</button>
+    <button onclick="showLoadingAnimation('payment')" class="text-white px-5 hover:text-orange-300">Payment</button>
+  </nav>
+
+  <!-- Sections -->
+
+  <!-- Home -->
+  <div id="home" class="section" style="display: none;">
+    <div class="flex flex-col justify-center items-center h-[60vh] bg-cover bg-center"
+      style="background-image: url('https://static.vecteezy.com/system/resources/previews/036/725/648/non_2x/ai-generated-shoes-store-advertisment-background-with-copy-space-free-photo.jpg');">
+      <div class="text-center my-6">
+        <h1 class="text-4xl font-bold text-white">Wolf Eyes</h1>
+        <p class="text-xl text-white mt-2">Discover the perfect shoes that match your style and comfort!</p>
+      </div>
+      <button onclick="showLoadingAnimation('categories')" class="px-12 mt-6 py-4 text-lg font-bold text-white rounded-lg border-2 border-white hover:bg-orange-500">
+        Shop Now
+      </button>
+    </div>
+    <div class="text-center mt-10 px-4">
+      <h2 class="text-2xl font-semibold text-gray-900">Welcome to Wolf Eyes</h2>
+      <p class="text-gray-700 mt-4">We offer a variety of stylish and comfortable footwear that suits every occasion.
+        Whether you're looking for casual sneakers or formal shoes, we have something for everyone. Explore our latest
+        collection now!</p>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div id="categories" class="section" style="display: none;">
+    <div class="text-center py-10">
+      <h2 class="text-3xl font-bold text-gray-900">Our Categories</h2>
+      <p class="text-gray-700 mt-4">Browse our various footwear categories. Choose the best fit for your needs and
+        style!</p>
+      
+      <!-- New: Search Functionality -->
+      <div class="flex justify-center mt-6 max-w-md mx-auto">
+        <div class="relative w-full">
+          <input type="text" id="searchInput" placeholder="Search products..." class="border rounded p-2 w-full text-sm">
+          <button onclick="searchProducts()" class="absolute right-0 top-0 bg-black text-white px-4 py-2 rounded-r hover:bg-orange-500 text-sm">
+            Search
+          </button>
+        </div>
+      </div>
+      <div id="noResultsMessage" class="mt-4 text-red-500 hidden">No results found. Try another search term.</div>
+      
+      <!-- Price Filter -->
+      <div class="flex justify-center mt-6 max-w-md mx-auto">
+        <div class="flex items-center space-x-4">
+          <div>
+            <label class="block text-sm text-gray-600">Min Price</label>
+            <input type="number" id="minPrice" placeholder="0" class="border rounded p-2 w-24 text-sm">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600">Max Price</label>
+            <input type="number" id="maxPrice" placeholder="300" class="border rounded p-2 w-24 text-sm">
+          </div>
+          <button onclick="filterByPrice()" class="bg-black text-white px-4 py-2 rounded hover:bg-orange-500 text-sm mt-6">
+            Filter
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-10 px-4 sm:px-12">
+      <!-- Product 4 -->
+      <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+        <img src="https://tse3.mm.bing.net/th?id=OIP.fThkbmtVk_eomkTj1wAexAHaEo&pid=Api&P=0&h=220" alt="Jordan A1 Shoes"
+          class="w-full rounded-lg hover:scale-105 transition">
+        <h3 class="text-xl font-semibold mt-4">Jordan A1 Shoes</h3>
+        <p class="text-gray-600 mt-2">Optimized for comfort during long runs.</p>
+        <p class="product-price text-xl font-bold text-gray-800 mt-2">$59.99</p>
+        <div class="flex space-x-2">
+          <button onclick="addToCart('Jordan A1 Shoes', 59.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+            Add to Cart
+          </button>
+          <button onclick="saveForLater('Jordan A1 Shoes', 59.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Product 1 -->
+      <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+        <img src="https://static-01.daraz.pk/p/9a283ac05f0cf6875c0e278efb444e2f.jpg" alt="Sneakers"
+          class="w-full rounded-lg hover:scale-105 transition">
+        <h3 class="text-xl font-semibold mt-4">Sneakers Shoes</h3>
+        <p class="text-gray-600 mt-2">Durable and comfy for daily wear.</p>
+        <p class="product-price text-xl font-bold text-gray-800 mt-2">$49.99</p>
+        <div class="flex space-x-2">
+          <button onclick="addToCart('Sneakers Shoes', 49.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+            Add to Cart
+          </button>
+          <button onclick="saveForLater('Sneakers Shoes', 49.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Product 8 -->
+      <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+        <img src="https://tse4.mm.bing.net/th?id=OIP.Jo1HhOqexNKKObMk0M-yPAHaFP&pid=Api&P=0&h=220" alt="Sandals"
+          class="w-full rounded-lg hover:scale-105 transition">
+        <h3 class="text-xl font-semibold mt-4">Nike Classic wear</h3>
+        <p class="text-gray-600 mt-2">Lightweight sandals perfect for the summer heat.</p>
+        <p class="product-price text-xl font-bold text-gray-800 mt-2">$29.99</p>
+        <div class="flex space-x-2">
+          <button onclick="addToCart('Nike Classic wear', 29.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+            Add to Cart
+          </button>
+          <button onclick="saveForLater('Nike Classic wear', 29.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Product 2 -->
+      <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+        <img src="https://unze.com.pk/cdn/shop/files/gs8314e.jpg?v=1706075585" alt="Casual Sneakers"
+          class="w-full rounded-lg hover:scale-105 transition">
+        <h3 class="text-xl font-semibold mt-4">Casual Sneakers</h3>
+        <p class="text-gray-600 mt-2">Stylish sneakers for your casual outings.</p>
+        <p class="product-price text-xl font-bold text-gray-800 mt-2">$39.99</p>
+        <div class="flex space-x-2">
+          <button onclick="addToCart('Casual Sneakers', 39.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+            Add to Cart
+          </button>
+          <button onclick="saveForLater('Casual Sneakers', 39.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Product 3 -->
+      <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+        <img src="https://tse1.mm.bing.net/th?id=OIP.JR7o3RDg3bW-RwhIaDAXBgHaHa&pid=Api&P=0&h=220" alt="Formal Shoes"
+          class="w-full rounded-lg hover:scale-105 transition">
+        <h3 class="text-xl font-semibold mt-4">Nike Sports Shoes</h3>
+        <p class="text-gray-600 mt-2">Perfect for office and special events.</p>
+        <p class="product-price text-xl font-bold text-gray-800 mt-2">$79.99</p>
+        <div class="flex space-x-2">
+          <button onclick="addToCart('Nike Sports Shoes', 79.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+            Add to Cart
+          </button>
+          <button onclick="saveForLater('Nike Sports Shoes', 79.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Product 5 -->
+        <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+          <img src="https://tse2.mm.bing.net/th?id=OIP.tAZtpLwas9yqBLsTpL9-5QHaEK&pid=Api&P=0&h=220" alt="Boots"
+            class="w-full rounded-lg hover:scale-105 transition">
+          <h3 class="text-xl font-semibold mt-4">Stylish Boots</h3>
+          <p class="text-gray-600 mt-2">Chic boots for a cool, stylish look.</p>
+          <p class="product-price text-xl font-bold text-gray-800 mt-2">$89.99</p>
+          <div class="flex space-x-2">
+            <button onclick="addToCart('Stylish Boots', 89.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+              Add to Cart
+            </button>
+            <button onclick="saveForLater('Stylish Boots', 89.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Product 7 -->
+        <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+          <img src="https://tse1.mm.bing.net/th?id=OIP.T543D6ozfeWcdFhiMabZrAHaHa&pid=Api&P=0&h=220"
+            alt="Geniune Cow Leather Shoes" class="w-full rounded-lg hover:scale-105 transition">
+          <h3 class="text-xl font-semibold mt-4">Geniune Cow Leather Shoes</h3>
+          <p class="text-gray-600 mt-2">Perfect for lounging around the house.</p>
+          <p class="product-price text-xl font-bold text-gray-800 mt-2">$249.95</p>
+          <div class="flex space-x-2">
+            <button onclick="addToCart('Geniune Cow Leather Shoes', 249.95)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+              Add to Cart
+            </button>
+            <button onclick="saveForLater('Geniune Cow Leather Shoes', 249.95)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Product 6 -->
+        <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+          <img src="https://tse1.mm.bing.net/th?id=OIP.qB0pOPTakSQZwMt7qLBbWwHaHa&pid=Api&P=0&h=220" alt="LeatherLoafers"
+            class="w-full rounded-lg hover:scale-105 transition">
+          <h3 class="text-xl font-semibold mt-4">Leather Loafers</h3>
+          <p class="text-gray-600 mt-2">Elegant and comfortable for formal occasions.</p>
+          <p class="product-price text-xl font-bold text-gray-800 mt-2">$69.99</p>
+          <div class="flex space-x-2">
+            <button onclick="addToCart('Leather Loafers', 69.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+              Add to Cart
+            </button>
+            <button onclick="saveForLater('Leather Loafers', 69.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+  
+        <!-- Product 9 -->
+        <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+          <img src="https://tse2.mm.bing.net/th?id=OIP.iJncv17hdj9z7XkdLPHvGgHaHa&pid=Api&P=0&h=220" alt="Formal Shoes"
+            class="w-full rounded-lg hover:scale-105 transition">
+          <h3 class="text-xl font-semibold mt-4">Formal Shoes</h3>
+          <p class="text-gray-600 mt-2">Add sophistication and height to any outfit.</p>
+          <p class="product-price text-xl font-bold text-gray-800 mt-2">$99.99</p>
+          <div class="flex space-x-2">
+            <button onclick="addToCart('Formal Shoes', 99.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+              Add to Cart
+            </button>
+            <button onclick="saveForLater('Formal Shoes', 99.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Product 10 -->
+        <div class="product-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-2 transition">
+          <img src="https://tse1.mm.bing.net/th?id=OIP.FWkRL9UR3dqgkQx82bPCgQHaHa&pid=Api&P=0&h=220" alt="Wedding Shoes"
+            class="w-full rounded-lg hover:scale-105 transition">
+          <h3 class="text-xl font-semibold mt-4">Wedding Shoes</h3>
+          <p class="text-gray-600 mt-2">Exquisite designs for your special day.</p>
+          <p class="product-price text-xl font-bold text-gray-800 mt-2">$129.99</p>
+          <div class="flex space-x-2">
+            <button onclick="addToCart('Wedding Shoes', 129.99)" class="mt-4 flex-1 bg-black text-white py-2 rounded hover:bg-orange-500">
+              Add to Cart
+            </button>
+            <button onclick="saveForLater('Wedding Shoes', 129.99)" class="mt-4 bg-gray-200 text-gray-800 py-2 px-3 rounded hover:bg-gray-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- About -->
+    <div id="about" class="section" style="display: none;">
+      <div class="bg-white py-20 px-6 text-center">
+        <h2 class="text-3xl font-bold">About Us</h2>
+        <p class="mt-4 text-base">Welcome to Wolf Eyes, your destination for high-quality and stylish footwear. We provide
+          sneakers, formal shoes, and casual styles that match your vibe and comfort.</p>
+        <p class="mt-4 text-base">Our mission is to offer premium shoes with designs that complement every aspect of your
+          lifestyle. With a focus on comfort, durability, and cutting-edge styles, Wolf Eyes ensures you're always ahead
+          of the curve in fashion.</p>
+        <p class="mt-4 text-base">Our team is dedicated to providing excellent customer service. If you have any questions
+          or concerns, we're always here to assist you. Thank you for choosing Wolf Eyes!</p>
+      </div>
+    </div>
+  
+    <!-- Contact -->
+    <div id="contact" class="section" style="display: none;">
+      <div class="bg-white py-20 px-6 text-center">
+        <h2 class="text-3xl font-bold">Contact Us</h2>
+        <p class="mt-4">We'd love to hear from you! If you have any inquiries or feedback, feel free to reach out to us.
+        </p>
+        <p class="mt-4">Email: <a href="mailto:info@wolfeyes.com" class="text-blue-500">info@wolfeyes.com</a></p>
+        <p class="mt-2">Phone: (+92)356-7890767</p>
+        <p class="mt-2">Address: 123 Shoe Street, Cityville, ST 54321</p>
+      </div>
+    </div>
+  
+    <!-- Payment -->
+    <div id="payment" class="section" style="display: none;">
+      <div class="max-w-md mx-auto bg-white my-10 p-8 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold text-center mb-6">Payment Details</h2>
+        <form id="paymentForm">
+          <!-- Full Name -->
+          <div class="mb-4">
+            <label class="block text-gray-700">Full Name</label>
+            <input type="text" id="fullName" class="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+              placeholder="John Doe" required>
+          </div>
+  
+          <!-- Address -->
+          <div class="mb-4">
+            <label class="block text-gray-700">Address</label>
+            <input type="text" id="address" class="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+              placeholder="123 Main Street" required>
+          </div>
+  
+          <!-- Postal Code -->
+          <div class="mb-4">
+            <label class="block text-gray-700">Postal Code</label>
+            <input type="text" id="postalCode" class="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+              placeholder="12345" required>
+          </div>
+  
+          <!-- Contact Number -->
+          <div class="mb-4">
+            <label class="block text-gray-700">Contact Number</label>
+            <input type="text" id="contactNumber" class="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+              placeholder="(+92)356-7890788" required>
+          </div>
+  
+          <!-- Total Payment -->
+          <div class="mb-4">
+            <label class="block text-gray-700">Total Payment</label>
+            <input type="text" id="totalPayment" class="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+              placeholder="$100.00">
+          </div>
+  
+          <button type="button" class="w-full bg-black text-white py-2 rounded hover:bg-orange-500 mt-4"
+            onclick="confirmPayment()">
+            Confirm Payment
+          </button>
+        </form>
+        <div id="confirmationMessage" class="hidden text-center mt-6 text-lg text-green-500">
+          <p>Your order has been successfully confirmed. Thank you for shopping with us!</p>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Back to top button -->
+    <button id="backToTopButton" onclick="scrollToTop()" class="fixed bottom-8 right-8 bg-black text-white p-3 rounded-full shadow-lg hidden hover:bg-orange-500 transition-all">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+      </svg>
+    </button>
+  
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-6 text-center">
+      <p>&copy; 2025 Wolf Eyes. All rights reserved.</p>
+    </footer>
+  
+  </body>
+  </html>
